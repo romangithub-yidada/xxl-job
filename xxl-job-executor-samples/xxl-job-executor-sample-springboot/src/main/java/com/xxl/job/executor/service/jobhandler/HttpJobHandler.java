@@ -1,5 +1,6 @@
 package com.xxl.job.executor.service.jobhandler;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.xxl.job.core.biz.model.ReturnT;
 import com.xxl.job.core.handler.IJobHandler;
 import com.xxl.job.core.handler.annotation.JobHandler;
@@ -10,6 +11,7 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.Map;
 
 /**
  * 跨平台Http任务
@@ -63,7 +65,15 @@ public class HttpJobHandler extends IJobHandler {
             String responseMsg = result.toString();
 
             XxlJobLogger.log(responseMsg);
-            return SUCCESS;
+
+            // 反序列化响应结果
+            Map<String, Object> resultMap = new ObjectMapper().readValue(responseMsg, Map.class);
+            int code = Integer.parseInt(resultMap.get("code").toString());
+            if (code == ReturnT.SUCCESS_CODE) {
+                return ReturnT.SUCCESS;
+            }
+            String msg = String.valueOf(resultMap.get("msg"));
+            return new ReturnT<>(ReturnT.FAIL_CODE, msg);
         } catch (Exception e) {
             XxlJobLogger.log(e);
             return FAIL;
