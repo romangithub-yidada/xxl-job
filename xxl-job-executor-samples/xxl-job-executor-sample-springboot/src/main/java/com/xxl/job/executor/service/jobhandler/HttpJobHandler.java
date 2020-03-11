@@ -11,6 +11,7 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -68,6 +69,7 @@ public class HttpJobHandler extends IJobHandler {
 
             // 反序列化响应结果
             Map<String, Object> resultMap = new ObjectMapper().readValue(responseMsg, Map.class);
+            resultMap = readFromEpinn(resultMap);
             int code = Integer.parseInt(resultMap.get("code").toString());
             if (code == ReturnT.SUCCESS_CODE) {
                 return ReturnT.SUCCESS;
@@ -92,4 +94,26 @@ public class HttpJobHandler extends IJobHandler {
 
     }
 
+    /**
+     * 对来自Epinn的响应结果进行格式转换
+     *
+     * @param sourceMap
+     * @return
+     */
+    private Map<String, Object> readFromEpinn(Map<String, Object> sourceMap) {
+        if (sourceMap.containsKey("ok") == false) {
+            return sourceMap;
+        }
+        Map<String, Object> result = new HashMap<>();
+        boolean isOk = Boolean.parseBoolean(sourceMap.get("ok").toString());
+        if (isOk) {
+            result.put("code", ReturnT.SUCCESS_CODE);
+        } else {
+            String msg = String.valueOf(sourceMap.get("message"));
+
+            result.put("code", ReturnT.FAIL_CODE);
+            result.put("msg", msg);
+        }
+        return result;
+    }
 }
